@@ -186,11 +186,7 @@ function annualPieChart (marcoSales,giuseppeSales,riccardoSales,robertoSales) {
         }]
       },
       // Configuration options go here
-      options: {
-        legend: {
-          text: string,
-        }
-      }
+      options:{}
   });
   chart.canvas.parentNode.style.width = '700px';
   chart.canvas.parentNode.style.height = '350px';
