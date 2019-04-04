@@ -109,7 +109,10 @@ function loadCardsForRnd () {
   });
 }
 
+//-----------------------------------------------------------------------------------------------
+
 function getSales() {
+  clearCharts();
   $.ajax ({
     url : "http://157.230.17.132:4010/sales",
     method : "GET",
@@ -117,135 +120,191 @@ function getSales() {
 
     },
     success : function (data,stato) {
-      var totalSales = 0;
-      var marcoSales = 0;
-      var giuseppeSales = 0;
-      var riccardoSales = 0;
-      var robertoSales = 0;
-
-      for (var i = 0; i < data.length; i++) {
-        var sale = Number(data[i].amount);
-        var salesman = data[i].salesman;
-        var date = data[i].date;
-        totalSales += sale;
-        // date = moment()
-
-        // console.log(date);
-
-        salesPerMonth(data);
-
-        switch (salesman) {
-          case "Marco":
-            marcoSales += sale;
-            break;
-          case "Giuseppe":
-            giuseppeSales += sale;
-            break;
-          case "Riccardo":
-            riccardoSales += sale;
-            break;
-          case "Roberto":
-            robertoSales += sale;
-            break;
-          // default:
-        }
-
-        // console.log(salesman);
-        // console.log(date);
-      }
-      console.log(data);
-      console.log("Totale vendite: " + totalSales);
-      console.log("Vendite di MARCO: " + marcoSales);
-      console.log("Vendite di GIUSEPPE: " + giuseppeSales);
-      console.log("Vendite di RICCARDO: " + riccardoSales);
-      console.log("Vendite di ROBERTO: " + robertoSales);
-
-      annualPieChart (marcoSales,giuseppeSales,riccardoSales,robertoSales);
+      salesPerMonth(data);
+      salesPerSalesman(data);
     },
     error : function () {},
   });
 }
-//Funzione per creare il grafico relativo alle vendite totali e alle percentuali di ogni venditore
-function annualPieChart (marcoSales,giuseppeSales,riccardoSales,robertoSales) {
-  var ctx = document.getElementById('totalAnnualSalesChart').getContext('2d');
-  var chart = new Chart(ctx, {
-      // The type of chart we want to create
-      type: 'pie',
+//Funzione per estrarre il nome del mese dalla stinga ricevuta
+function getMonthNameFromDate(date) {
 
-      // The data for our dataset
-      data: {
-        labels: ['Marco', 'Giuseppe', 'Riccardo', 'Roberto'],
-        datasets: [{
-          label: 'Total Sales',
-          backgroundColor: ['rgb(155, 222, 932)',
-                           'rgb(200, 450, 192)',
-                           'rgb(355, 99, 32)',
-                           'rgb(5, 10, 132)',],
-          borderColor: 'rgba(255, 99, 132, 0.1)',
-          data: [marcoSales,giuseppeSales,riccardoSales,robertoSales]
-        }]
-      },
-      // Configuration options go here
-      options:{}
-  });
-  chart.canvas.parentNode.style.width = '700px';
-  chart.canvas.parentNode.style.height = '350px';
+  var mom = moment(date, "DD/MM/YYYY");
+  var monthName = mom.format("MMMM");
+
+  return monthName;
 }
-//Funzione per creare il grafico relativo alle vendite mensili
-function monthlyChart (monthSales) {
-  var ctx = document.getElementById('chartMonthlySales').getContext('2d');
-  var chart = new Chart(ctx, {
-      // The type of chart we want to create
-      type: 'bar',
-
-      // The data for our dataset
-      data: {
-        labels: ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'],
-        datasets: [{
-          label: 'Total Sales',
-          backgroundColor: ['rgb(155, 222, 932)',
-                           'rgb(200, 450, 192)',
-                           'rgb(355, 99, 32)',
-                           'rgb(155, 399, 322)',
-                           'rgb(355, 945, 112)',
-                           'rgb(155, 254, 32)',
-                           'rgb(355, 99, 323)',
-                           'rgb(155, 889, 222)',
-                           'rgb(355, 999, 32)',
-                           'rgb(55, 99, 322)',
-                           'rgb(355, 159, 444)',
-                           'rgb(5, 10, 132)',],
-          borderColor: 'rgb(77, 77, 77)',
-          data: monthSales,
-        }]
-      },
-      // Configuration options go here
-      options: {}
-  });
-  chart.canvas.parentNode.style.width = '700px';
-  chart.canvas.parentNode.style.height = '350px';
-}
-
+//funzione per ricavare mese e totale vendite di quel mese
 function salesPerMonth (data) {
-  var monthSales = [0,0,0,0,0,0,0,0,0,0,0,0];
+
+  var monthSales = {
+    "January" : 0,
+    "February" : 0,
+    "March" : 0,
+    "April" : 0,
+    "May" : 0,
+    "June" : 0,
+    "July" : 0,
+    "August" : 0,
+    "September" : 0,
+    "October" : 0,
+    "November" : 0,
+    "December" : 0,
+  }
+
   for (var i = 0; i < data.length; i++) {
+
     var d = data[i];
     var amount = Number(d.amount);
     var date = d.date;
-
-    var dateSplit = date.split("/");
-    var month = dateSplit[1];
-
-    monthSales[month - 1] += amount;
+    var month = getMonthNameFromDate(date);
+    monthSales[month] += amount;
+    console.log(d.salesman + month + amount);
   }
-  monthlyChart (monthSales);
-  // console.log("monthSales: " + monthSales);
+  var months = Object.keys(monthSales);
+  var totalAmount = Object.values(monthSales);
+  console.log(monthSales);
+  monthlyChart (months, totalAmount);
+}
+//Funzione per creare il grafico relativo alle vendite mensili
+function monthlyChart (keys,monthSales) {
+  var ctx = document.getElementById('chartMonthlySales').getContext('2d');
+  var chart = new Chart(ctx, {
+    // The type of chart we want to create
+    type: 'line',
+
+    // The data for our dataset
+    data: {
+      labels: keys,
+      datasets: [{
+        label: 'Total Sales in 2017',
+        backgroundColor: ['rgb(155, 222, 932)',
+        // 'rgb(200, 450, 192)',
+        // 'rgb(355, 99, 32)',
+        // 'rgb(155, 399, 322)',
+        // 'rgb(355, 945, 112)',
+        // 'rgb(155, 254, 32)',
+        // 'rgb(355, 99, 323)',
+        // 'rgb(155, 889, 222)',
+        // 'rgb(355, 999, 32)',
+        // 'rgb(55, 99, 322)',
+        // 'rgb(355, 159, 444)',
+        // 'rgb(5, 10, 132)',
+        ],
+      borderColor: 'rgb(77, 77, 77)',
+      data: monthSales,
+      }]
+    },
+  // Configuration options go here
+  options: {}
+  });
+chart.canvas.parentNode.style.width = '700px';
+chart.canvas.parentNode.style.height = '350px';
+}
+//Funzione per ricavare totale vendite e percentuale di ogni venditore
+function salesPerSalesman(data) {
+
+  var salesman = {};
+  var totaleVendite = 0;
+
+  for (var i = 0; i < data.length; i++) {
+
+    var d = data[i];
+    var amount = Number(d.amount);
+    totaleVendite += amount;
+
+    if (!salesman[d.salesman]) {
+      salesman[d.salesman] = 0;
+    }
+
+    salesman[d.salesman] += amount;
+  }
+  console.log(salesman);
+  console.log("totale vendite: "+totaleVendite);
+  var salesMan = Object.keys(salesman);
+  var totalAmount = Object.values(salesman)
+  annualPieChart(salesMan, totalAmount)
+}
+//Funzione per creare il grafico relativo alle vendite totali e alle percentuali di ogni venditore
+function annualPieChart (salesman, totalAmount) {
+  console.log(totalAmount);
+  var ctx = document.getElementById('totalAnnualSalesChart').getContext('2d');
+  var chart = new Chart(ctx, {
+    // The type of chart we want to create
+    type: 'pie',
+
+    // The data for our dataset
+    data: {
+      labels: salesman,
+      datasets: [{
+        label: 'Total Sales',
+        backgroundColor: ['rgb(155, 222, 932)',
+        'rgb(200, 450, 192)',
+        'rgb(355, 99, 32)',
+        'rgb(5, 10, 132)',],
+        borderColor: 'rgba(255, 99, 132, 0.1)',
+        data: totalAmount
+      }]
+    },
+    // Configuration options go here
+    options:{}
+  });
+  chart.canvas.parentNode.style.width = '600px';
+  chart.canvas.parentNode.style.height = '300px';
+}
+//Funzione per aggiungere una vendita
+function addSale() {
+  var venditore = $("#venditore").val();
+  var somma = $("#vendita").val();
+  var data = $("#data").val();
+  $.ajax ({
+    url : "http://157.230.17.132:4010/sales",
+    method : "POST",
+    data : {
+      salesman : capitalizeFirstLetter(venditore),
+      amount: somma,
+      date: data,
+    },
+    success : function (data,stato) {
+      clearClick();
+      getSales();
+    },
+    error : function () {},
+  });
+}
+//Funzione per scrivere con la maiuscola una qualsiasi stringa
+function capitalizeFirstLetter(string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+}
+//funzione per ripulire i campi
+function clearClick () {
+  var venditore = $("#venditore").val("");
+  var somma = $("#vendita").val("");
+  var data = $("#data").val("");
+}
+//funzione per piallare i grafici
+function clearCharts() {
+  var chartsCont = $("#totalAnnualSalesChart");
+  var chartsCont2 = $("#chartMonthlySales");
+  chartsCont.remove();
+  chartsCont2.remove();
+  var chartNew = document.createElement("canvas");
+  var chartNew2 = document.createElement("canvas");
+  $(chartNew).attr("id","chartMonthlySales");
+  $(chartNew2).attr("id","totalAnnualSalesChart");
+  var cont = $(".contNew");
+  var cont2 = $(".contNew2");
+  cont.append(chartNew);
+  cont2.append(chartNew2);
 }
 
 function init() {
   // loadCards ();
   // loadCardsForRnd ();
   getSales();
+  var myBtn = $("#addDataButton");
+  myBtn.click(addSale);
+  // clearCharts();
 }
 
 $(document).ready(init);
