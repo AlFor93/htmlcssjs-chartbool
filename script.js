@@ -159,12 +159,13 @@ function salesPerMonth (data) {
     var date = d.date;
     var month = getMonthNameFromDate(date);
     monthSales[month] += amount;
-    console.log(d.salesman + month + amount);
+    // console.log(d.salesman + month + amount);
   }
   var months = Object.keys(monthSales);
   var totalAmount = Object.values(monthSales);
-  console.log(monthSales);
+  console.log(totalAmount);
   monthlyChart (months, totalAmount);
+  quarterChart(monthSales);
 }
 //Funzione per creare il grafico relativo alle vendite mensili
 function monthlyChart (keys,monthSales) {
@@ -193,6 +194,46 @@ function monthlyChart (keys,monthSales) {
         ],
       borderColor: 'rgb(77, 77, 77)',
       data: monthSales,
+      }]
+    },
+  // Configuration options go here
+  options: {}
+  });
+chart.canvas.parentNode.style.width = '700px';
+chart.canvas.parentNode.style.height = '350px';
+}
+//Funzione per creare il grafico relativo alle vendite trimestrali
+function quarterChart (monthSales) {
+  var totalAmount = Object.values(monthSales);
+  var q1 = 0;
+  var q2 = 0;
+  var q3 = 0;
+  var q4 = 0;
+
+  for (var i = 0; i < 3; i++) {
+    q1 += totalAmount[i];
+    q2 += totalAmount[i+3];
+    q3 += totalAmount[i+6];
+    q4 += totalAmount[i+9];
+  }
+
+  var ctx = document.getElementById('quarterSalesChart').getContext('2d');
+  var chart = new Chart(ctx, {
+    // The type of chart we want to create
+    type: 'bar',
+
+    // The data for our dataset
+    data: {
+      labels: ["q1","q2","q3","q4"],
+      datasets: [{
+        label: 'Total Sales in 2017',
+        backgroundColor: ['rgb(26, 209, 6)',
+                          'rgb(26, 209, 6)',
+                          'rgb(26, 209, 6)',
+                          'rgb(26, 209, 6)',
+        ],
+      borderColor: 'rgb(77, 77, 77)',
+      data: [q1,q2,q3,q4],
       }]
     },
   // Configuration options go here
@@ -286,16 +327,22 @@ function clearClick () {
 function clearCharts() {
   var chartsCont = $("#totalAnnualSalesChart");
   var chartsCont2 = $("#chartMonthlySales");
+  var chartsCont3 = $("#quarterSalesChart");
   chartsCont.remove();
   chartsCont2.remove();
+  chartsCont3.remove();
   var chartNew = document.createElement("canvas");
   var chartNew2 = document.createElement("canvas");
+  var chartNew3 = document.createElement("canvas");
   $(chartNew).attr("id","chartMonthlySales");
   $(chartNew2).attr("id","totalAnnualSalesChart");
+  $(chartNew3).attr("id","quarterSalesChart");
   var cont = $(".contNew");
   var cont2 = $(".contNew2");
+  var cont3 = $(".contNew3");
   cont.append(chartNew);
   cont2.append(chartNew2);
+  cont3.append(chartNew3);
 }
 
 function init() {
@@ -304,7 +351,6 @@ function init() {
   getSales();
   var myBtn = $("#addDataButton");
   myBtn.click(addSale);
-  // clearCharts();
 }
 
 $(document).ready(init);
